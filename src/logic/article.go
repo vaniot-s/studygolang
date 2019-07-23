@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-xorm/xorm"
 	"github.com/polaris1119/slices"
 
 	"github.com/PuerkitoBio/goquery"
@@ -55,7 +56,7 @@ func (self ArticleLogic) ParseArticle(ctx context.Context, articleUrl string, au
 
 	tmpArticle := &model.Article{}
 	_, err := MasterDB.Where("url=?", articleUrl).Get(tmpArticle)
-	if err != nil || tmpArticle.Id != 0 {
+	if err != nil || (tmpArticle.Id != 0 && auto) {
 		logger.Infoln(articleUrl, "has exists:", err)
 		return nil, errors.New("has exists!")
 	}
@@ -78,7 +79,7 @@ func (self ArticleLogic) ParseArticle(ctx context.Context, articleUrl string, au
 	}
 
 	if rule.Id == 0 {
-		return self.ParseArticleByAccuracy(articleUrl)
+		return self.ParseArticleByAccuracy(articleUrl, tmpArticle, auto)
 	}
 
 	// 知乎特殊处理
@@ -113,6 +114,22 @@ func (self ArticleLogic) ParseArticle(ctx context.Context, articleUrl string, au
 
 			author = strings.TrimSpace(author)
 			authorTxt = strings.TrimSpace(authorSelection.Text())
+		} else if strings.HasPrefix(rule.Author, "/") {
+			// 正则表达式
+			re, err := regexp.Compile(rule.Author[1:])
+			if err != nil {
+				logger.Errorln("author regexp error:", err)
+				return nil, err
+			}
+			body, _ := doc.Find("body").Html()
+			authorResult := re.FindStringSubmatch(body)
+			if len(authorResult) < 2 {
+				logger.Errorln("no author found:", rule.Domain)
+				return nil, errors.New("no author found!")
+			}
+
+			author = authorResult[1]
+			authorTxt = author
 		} else {
 			// 某些个人博客，页面中没有作者的信息，因此，规则中 author 即为 作者
 			author = rule.Author
@@ -219,6 +236,15 @@ func (self ArticleLogic) ParseArticle(ctx context.Context, articleUrl string, au
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if !auto && tmpArticle.Id > 0 {
+		_, err = MasterDB.Id(tmpArticle.Id).Update(article)
+		if err != nil {
+			logger.Errorln("upadate article error:", err)
+			return nil, err
+		}
+		return article, nil
 	}
 
 	_, err = MasterDB.Insert(article)
@@ -556,7 +582,7 @@ func (self ArticleLogic) FindByUser(ctx context.Context, username string, limit 
 	objLog := GetLogger(ctx)
 
 	articles := make([]*model.Article, 0)
-	err := MasterDB.Where("author_txt=?", username).OrderBy("id DESC").Limit(limit).Find(&articles)
+	err := MasterDB.Where("author_txt=? AND status<?", username, model.ArticleStatusOffline).OrderBy("id DESC").Limit(limit).Find(&articles)
 	if err != nil {
 		objLog.Errorln("ArticleLogic FindByUser Error:", err)
 		return nil
@@ -619,6 +645,7 @@ func (self ArticleLogic) FindAll(ctx context.Context, paginator *Paginator, orde
 	if querystring != "" {
 		session.Where(querystring, args...)
 	}
+	self.addStatusWhere(session)
 	err := session.Limit(paginator.PerPage(), paginator.Offset()).Find(&articles)
 	if err != nil {
 		objLog.Errorln("ArticleLogic FindAll error:", err)
@@ -633,14 +660,15 @@ func (self ArticleLogic) FindAll(ctx context.Context, paginator *Paginator, orde
 func (ArticleLogic) Count(ctx context.Context, querystring string, args ...interface{}) int64 {
 	objLog := GetLogger(ctx)
 
+	session := MasterDB.Where("status<?", model.ArticleStatusOffline)
 	var (
 		total int64
 		err   error
 	)
 	if querystring == "" {
-		total, err = MasterDB.Count(new(model.Article))
+		total, err = session.Count(new(model.Article))
 	} else {
-		total, err = MasterDB.Where(querystring, args...).Count(new(model.Article))
+		total, err = session.Where(querystring, args...).Count(new(model.Article))
 	}
 
 	if err != nil {
@@ -1057,6 +1085,10 @@ func (ArticleLogic) getOwner(id int) int {
 	return 0
 }
 
+func (ArticleLogic) addStatusWhere(session *xorm.Session) {
+	session.Where("status<?", model.ArticleStatusOffline)
+}
+
 // 博文评论
 type ArticleComment struct{}
 
@@ -1086,6 +1118,9 @@ func (self ArticleComment) SetObjinfo(ids []int, commentMap map[int][]*model.Com
 	}
 
 	for _, article := range articles {
+		if article.Status >= model.ArticleStatusOffline {
+			continue
+		}
 		objinfo := make(map[string]interface{})
 		objinfo["title"] = article.Title
 		objinfo["uri"] = model.PathUrlMap[model.TypeArticle]
