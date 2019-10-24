@@ -368,6 +368,49 @@ jQuery(document).ready(function($) {
 		});
 	}
 
+	// 用于列表页发送喜欢(取消喜欢)
+	var postListLike = function(that, callback){
+		if ($('#is_login_status').val() != 1) {
+			openPop("#login-pop");
+			return;
+		}
+
+		var objid = $(that).data('objid'),
+			objtype = $(that).data('objtype'),
+			likeFlag = parseInt($(that).data('flag'), 10);
+
+		if (likeFlag) {
+			likeFlag = 0;
+		} else {
+			likeFlag = 1;
+		}
+
+		$.post('/like/'+objid, {objtype:objtype, flag:likeFlag}, function(data){
+			if (data.ok) {
+
+				$(that).data('flag', likeFlag);
+
+				var likeNum = parseInt($(that).children('.zan-num').text(), 10);
+				// 已喜欢
+				if (likeFlag) {
+					comTip("感谢赞！");
+					$(that).children('.zan-word').text('已赞');
+					likeNum++;
+				} else {
+					comTip("已取消赞！");
+					$(that).children('.zan-word').text('赞');
+					likeNum--;
+				}
+
+				$(that).children('.zan-num').text(likeNum);
+
+				callback(likeNum, likeFlag);
+			} else {
+				alert(data.error);
+			}
+		});
+	}
+
 	// 详情页喜欢(取消喜欢)
 	$('.page #content-thank a').on('click', function(evt){
 		evt.preventDefault();
@@ -375,6 +418,29 @@ jQuery(document).ready(function($) {
 		var that = this;
 		postLike(that, function(likeNum, likeFlag){
 			// $('.page .meta .p-comment .like .likenum').text(likeNum);
+		});
+	});
+
+	// 详情页左侧喜欢
+	$('.suspended-panel .like-btn').on('click', function(evt) {
+		evt.preventDefault();
+
+		var that = this;
+		postLike('.page #content-thank a', function(likeNum, likeFlag) {
+			var badge = $(that).attr('badge');
+			if (likeFlag) {
+				badge++;
+				$(that).addClass('active');
+			} else {
+				badge--;
+				$(that).removeClass('active');
+			}
+			$(that).attr('badge', badge);
+			if (badge == 1) {
+				$(that).addClass('with-badge');
+			} else if (badge == 0) {
+				$(that).removeClass('with-badge');
+			}
 		});
 	});
 
@@ -388,6 +454,20 @@ jQuery(document).ready(function($) {
 				$(that).children('i').removeClass('glyphicon-heart-empty').addClass('glyphicon-heart');
 			} else {
 				$(that).children('i').removeClass('glyphicon-heart').addClass('glyphicon-heart-empty');
+			}
+		});
+	});
+
+	// 通用列表页点赞（取消赞）
+	$('.zan-operation').on('click', function(evt) {
+		evt.preventDefault();
+		
+		var that = this;
+		postListLike(that, function(likeNum, likeFlag){
+			if (likeFlag) {
+				$(that).addClass('active');
+			} else {
+				$(that).removeClass('active');
 			}
 		});
 	});
@@ -437,6 +517,29 @@ jQuery(document).ready(function($) {
 		});
 	});
 
+	// 详情页左侧收藏（取消收藏）
+	$('.suspended-panel .collect-btn').on('click', function(evt) {
+		evt.preventDefault();
+		
+		var that = this;
+		postFavorite('.page .collect', function(hadCollect) {
+			$('.page .collect').data('collect', hadCollect);
+
+			if (hadCollect) {
+				$(that).addClass('active');
+
+				comTip("感谢收藏！");
+				$('.page .collect').attr('title', '取消收藏').text('取消收藏');
+			} else {
+				$(that).removeClass('active');
+
+				$('.page .collect').attr('title', '稍后再读').text('加入收藏');
+				comTip("已取消收藏！");
+			}
+
+		});
+	});
+
 	// 收藏页 取消收藏
 	$('.article .metatag .collect').on('click', function(evt){
 		evt.preventDefault();
@@ -445,6 +548,42 @@ jQuery(document).ready(function($) {
 		postFavorite(that, function(){
 			$(that).parents('article').fadeOut();
 		});
+	});
+
+	// 提示关注微信公众号
+	$('.qrcode').on('mouseover', function(evt) {
+		$('.qrcode-pop').show();
+	});
+	$('.qrcode').on('mouseout', function(evt) {
+		$('.qrcode-pop').hide();
+	});
+
+	// 当前链接的微信二维码
+	var hadGenQRCode = false;
+	$('.wechat-btn').on('mouseover', function(evt) {
+		if (hadGenQRCode) {
+			$(this).children('img').show();
+			return;
+		}
+		new QRCode(this, {
+			text: location.href,
+			width: 256,
+			height: 256,
+		});
+		hadGenQRCode = true;
+	});
+	$('.wechat-btn').on('mouseout', function(evt) {
+		$(this).children('img').hide();
+	});
+
+	// 详情页左侧评论按钮
+	$('.comment-btn').on('click', function(evt) {
+		var url = location.href;
+		if (url.indexOf("#commentForm") == -1) {
+			location.href = url + "#commentForm";
+		} else {
+			location.href = url;
+		}
 	});
 
 	window.saveComposeDraft = function(uid, keyprefix, objdata) {

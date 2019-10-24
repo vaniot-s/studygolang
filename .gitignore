@@ -16,6 +16,8 @@ assets
 
 node_modules
 
+.vscode
+
 # Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out
@@ -48,3 +50,4 @@ welcome.png
 .DS_Store
 /env.ini
 ssl
+bin

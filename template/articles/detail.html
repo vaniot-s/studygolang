@@ -2,6 +2,9 @@
 {{define "seo"}}<meta name="keywords" content="{{.setting.SeoKeywords}}">
 <meta name="description" content="{{substring .article.Txt 200 ""}}">{{end}}
 {{define "content"}}
+
+{{include "common/suspend.html" .}}
+
 <div class="row">
 	<div class="col-md-9 col-sm-6">
 		<div class="sep20"></div>
@@ -10,7 +13,7 @@
 			<li><a href="/articles">文章</a></li>
 		</ol>
 		<div class="page">
-			<div class="box_white">
+			<div class="box_white" style="overflow: visible;">
 				<div class="title">
 					{{if .article.IsSelf}}
 					<div class="pull-right">
@@ -96,10 +99,13 @@
 					{{end}}
 				</div>
 
+				<!-- 加群等 -->
+				{{include "common/promotion.html" .}}
+
 				<div class="content-buttons">
 					<div class="pull-right c9 f11" style="line-height: 12px; padding-top: 3px; text-shadow: 0px 1px 0px #fff;">{{.article.Viewnum}} 次点击 &nbsp;{{if .article.Likenum}}∙&nbsp; {{.article.Likenum}} 赞 &nbsp; {{end}}</div>
 					<a class="tb collect" href="javascript:;" title="{{if .hadcollect}}取消收藏{{else}}加入收藏{{end}}" data-objid="{{.article.Id}}" data-objtype="1" data-collect="{{.hadcollect}}">{{if .hadcollect}}取消收藏{{else}}加入收藏{{end}}</a>
-					<a href="javascript:" onclick="window.open('http://service.weibo.com/share/share.php?url=http{{if .is_https}}s{{end}}://{{.setting.Domain}}/articles/{{.article.Id}}&title='+encodeURIComponent('{{.setting.Name}} - {{.article.Title}} by {{.article.AuthorTxt}} #golang#'), '_blank', 'width=550,height=370');" class="tb">微博</a>
+					<a href="javascript:" class="tb weibo-btn">微博</a>
 					<div id="content-thank">
 						<a class="tb" href="javascript:;" title="{{if .likeflag}}取消赞{{else}}赞{{end}}" data-objid="{{.article.Id}}" data-objtype="1" data-flag="{{.likeflag}}">{{if .likeflag}}取消赞{{else}}赞{{end}}</a>
 					</div>
@@ -147,7 +153,11 @@
 						{{end}}
 					{{end}}
 					</div>
-					<span class="c9"><span class="cmtnum">{{.article.Cmtnum}}</span> 回复 {{if .article.Cmtnum}}&nbsp;<strong class="snow">|</strong> &nbsp;直到 {{.article.Lastreplytime}}{{end}}</span>
+					{{if .article.CloseReply}}
+						<span class="c9">作者关闭了回复功能</span>
+					{{else}}
+						<span class="c9"><span class="cmtnum">{{.article.Cmtnum}}</span> 回复 {{if .article.Cmtnum}}&nbsp;<strong class="snow">|</strong> &nbsp;直到 {{.article.Lastreplytime}}{{end}}</span>
+					{{end}}
 				</div>
 				{{include "common/comment-page.html" .}}
 				<div class="comment-list cell" data-objid="{{.article.Id}}" data-objtype="1" {{if .me.Uid}}data-username="{{.me.Username}}" data-uid="{{.me.Uid}}" data-avatar="{{gravatar .me.Avatar .me.Email 48 .is_https}}"{{end}}>
@@ -156,8 +166,10 @@
 				{{include "common/comment-page.html" .}}
 			</div>
 
+			{{if not .article.CloseReply}}
 			<!-- 评论框 -->
 			{{template "comment" .}}
+			{{end}}
 
 			{{include "common/view_stat.html" .}}
 
@@ -186,6 +198,8 @@
 		{{end}}
 
 		{{include "sidebar/view_rank.html" (parseJSON `{"rank_title":"一周阅读排行","objtype":1,"limit":10,"rank_type":"week"}`)}}
+
+		{{include "sidebar/concern.html" .}}
 
 	</div>
 </div>
@@ -235,7 +249,9 @@ $(function(){
 	// 文本框自动伸缩
 	$('.need-autogrow').autoGrow();
 
+	{{if not .article.CloseReply}}
 	loadComments();
+	{{end}}
 
 	// 文章链接，在本站的 iframe 中打开
 	$('#wrapper .content').on('mousedown', 'a', function(evt){
@@ -252,6 +268,12 @@ $(function(){
 	} else {
 		$('.read-time').text('预计阅读时间不到 1 分钟');
 	}
+
+	$('.weibo-btn').on('click', function(evt) {
+		evt.preventDefault();
+
+		window.open('http://service.weibo.com/share/share.php?url=http{{if .is_https}}s{{end}}://{{.setting.Domain}}/articles/{{.article.Id}}&title='+encodeURIComponent('{{.setting.Name}} - {{.article.Title}} by {{.article.AuthorTxt}} #golang#'), '_blank', 'width=550,height=370');
+	});
 });
 </script>
 {{include "cssjs/ckeditor.js.html" .}}

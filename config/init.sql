@@ -56,9 +56,9 @@ VALUES
 	(43, '编辑/新增节点', 15, 42, '/admin/community/node/modify', 'polaris', '2017-09-01 22:23:08', '2017-09-01 23:11:09');
 
 
-INSERT INTO `website_setting` (`id`, `name`, `domain`, `title_suffix`, `favicon`, `logo`, `start_year`, `blog_url`, `reading_menu`, `docs_menu`, `slogan`, `beian`, `friends_logo`, `footer_nav`, `project_df_logo`, `index_nav`, `created_at`, `updated_at`)
+INSERT INTO `website_setting` (`name`, `domain`, `title_suffix`, `favicon`, `logo`, `start_year`, `blog_url`, `reading_menu`, `docs_menu`, `slogan`, `beian`, `friends_logo`, `footer_nav`, `project_df_logo`, `index_nav`, `created_at`)
 VALUES
-	(1, 'Go语言中文网', 'studygolang.com', '- Go语言中文网 - Golang中文社区', '/static/img/go.ico', '/static/img/logo1.png', 2013, 'http://blog.studygolang.com', '', '', 'Go语言中文网，中国 Golang 社区，致力于构建完善的 Golang 中文社区，Go语言爱好者的学习家园。', '京ICP备14030343号-1', '[{\"image\":\"http://qiniutek.com/images/logo-2.png\",\"url\":\"https://portal.qiniu.com/signup?code=3lfz4at7pxfma\",\"name\":\"\",\"width\":\"290px\",\"height\":\"45px\"}]', '[{\"name\":\"关于\",\"url\":\"/wiki/about\",\"outer_site\":false},{\"name\":\"贡献者\",\"url\":\"/wiki/contributors\",\"outer_site\":false},{\"name\":\"帮助推广\",\"url\":\"/wiki\",\"outer_site\":false},{\"name\":\"反馈\",\"url\":\"/topics/node/16\",\"outer_site\":false},{\"name\":\"Github\",\"url\":\"https://github.com/studygolang\",\"outer_site\":true},{\"name\":\"新浪微博\",\"url\":\"http://weibo.com/studygolang\",\"outer_site\":true},{\"name\":\"内嵌Wide\",\"url\":\"/wide/playground\",\"outer_site\":false},{\"name\":\"免责声明\",\"url\":\"/wiki/duty\",\"outer_site\":false}]', '', '[{"tab":"all"}]', '2017-05-21 10:22:00', '2017-05-21 21:30:56');
+	('Go语言中文网', 'studygolang.com', '- Go语言中文网 - Golang中文社区', '/static/img/go.ico', '/static/img/logo1.png', 2013, 'http://blog.studygolang.com', '', '', 'Go语言中文网，中国 Golang 社区，致力于构建完善的 Golang 中文社区，Go语言爱好者的学习家园。', '京ICP备14030343号-1', '', '[{\"name\":\"关于\",\"url\":\"/wiki/about\",\"outer_site\":false},{\"name\":\"贡献者\",\"url\":\"/wiki/contributors\",\"outer_site\":false},{\"name\":\"帮助推广\",\"url\":\"/wiki\",\"outer_site\":false},{\"name\":\"反馈\",\"url\":\"/topics/node/16\",\"outer_site\":false},{\"name\":\"Github\",\"url\":\"https://github.com/studygolang\",\"outer_site\":true},{\"name\":\"新浪微博\",\"url\":\"http://weibo.com/studygolang\",\"outer_site\":true},{\"name\":\"内嵌Wide\",\"url\":\"/wide/playground\",\"outer_site\":false},{\"name\":\"免责声明\",\"url\":\"/wiki/duty\",\"outer_site\":false}]', '', '[{"tab":"all","name":"全部","data_source":"feed"}]', '2017-05-21 10:22:00');
 
 INSERT INTO `friend_link` (`id`, `name`, `url`, `seq`, `logo`, `created_at`)
 VALUES
@@ -66,8 +66,11 @@ VALUES
 
 INSERT INTO `user_setting` (`id`, `key`, `value`, `remark`, `created_at`)
 VALUES
-	(1, 'new_user_wait', 0, '新用户注册多久能发布帖子，单位秒，0表示没限制', '2017-05-30 18:11:31'),
-	(2, 'can_edit_time', 300, '发布后多久内能够编辑，单位秒', '2017-05-30 18:12:53');
+	(1, 'new_user_wait', 0, '新用户注册多久才能发布帖子，单位秒，0表示没限制', '2017-05-30 10:11:31'),
+	(2, 'can_edit_time', 172800, '发布后多久内能够编辑，单位秒', '2017-05-30 10:12:53'),
+	(3, 'publish_times', 3, '一天发布次数大于该值，需要验证码', '2018-10-01 10:47:23'),
+	(4, 'publish_interval', 60, '发布时间间隔在该值内，需要验证码，单位秒', '2018-10-01 10:56:18');
+
 
 INSERT INTO `mission` (`id`, `name`, `type`, `fixed`, `min`, `max`, `incr`, `state`, `created_at`)
 VALUES

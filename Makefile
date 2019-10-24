@@ -1,21 +1,36 @@
-.PHONY: getpkg install reload start stop migrate
+.PHONY: build reload start stop
 
 v=""
 
-getpkg:
-	./getpkg.sh
+export GOPROXY=https://goproxy.cn
+export GO111MODULE=on
 
-install:
-	./install.sh
+BUILD = $(shell git symbolic-ref HEAD | cut -b 12-)-$(shell git rev-parse HEAD)
+
+build:
+	if [ ! -d log ]; then mkdir log; fi
+
+	gofmt -w -s .
+
+	go build -ldflags "-X global.Build=$(BUILD)" -o bin/studygolang github.com/studygolang/studygolang/cmd/studygolang
+
+	@echo "build successfully!"
 
 reload:
-	./reload.sh	
+	kill -USR2 `cat pid/*.pid`
+
+	echo 'reload successfully'
 
 start:
-	./start.sh	
+	if [ ! -d pid ]; then mkdir pid; fi
+	export GOTRACEBACK=crash
+	ulimit -c unlimited
+
+	bin/studygolang >> log/panic.log 2>&1 &
+
+	@echo "start successfully"
 
 stop:
-	./stop.sh	
-
-migrate:
-	./bin/migrator --changeVersion=${v}
+	kill `cat pid/*.pid`
+	sleep 1
+	rm -rf pid/*.pid
